@@ -1,22 +1,39 @@
 'use strict';
 const express = require('express');
-const path = require('path');
 const serverless = require('serverless-http');
 const app = express();
-const bodyParser = require('body-parser');
 
-const router = express.Router();
-router.get('/', (req, res) => {
-    res.writeHead(200, { 'Content-Type': 'text/html' });
-    res.write('<h1>Probado Netlify con Express!</h1>');
-    res.end();
+app.get('/', function(req, res) {
+
+    var sql = require("mssql");
+
+    // config for your database
+    var config = {
+        user: 'zenonpa',
+        password: 'arret123BC',
+        server: 'pvsafety.cgkpwxttheg4.us-east-1.rds.amazonaws.com',
+        database: 'pvsafety'
+    };
+
+    // connect to your database
+    sql.connect(config, function(err) {
+
+        if (err) console.log(err);
+
+        // create Request object
+        var request = new sql.Request();
+
+        // query to the database and get the records
+        request.query('select [name], [xtype] from sysobjects', function(err, recordset) {
+
+            if (err) console.log(err)
+
+            // send records as a response
+            res.send(recordset);
+
+        });
+    });
 });
-router.get('/another', (req, res) => res.json({ route: req.originalUrl }));
-router.post('/', (req, res) => res.json({ postBody: req.body }));
-
-app.use(bodyParser.json());
-app.use('/.netlify/functions/server', router); // path must route to lambda
-app.use('/', (req, res) => res.sendFile(path.join(__dirname, '../index.html')));
 
 module.exports = app;
 module.exports.handler = serverless(app);
